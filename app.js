@@ -1,9 +1,10 @@
-/* OTP Verification V3 — reconstructed from the reference recording */
+/* OTP Verification V3 — matched to the reference recording */
 (() => {
   const CODE = "4719";
   const N = CODE.length;
-  const ORBIT_RADIUS = 78;   // px around the hub
-  const VERIFY_HOLD = 2400;  // ms of spin before success
+  const ORBIT_RADIUS = 78;   // px from hub to tile centre
+  const ORBIT_MS = 1760;     // one full revolution (2 x 880ms beats)
+  const SPLASH_MS = 1800;    // how long the TikTok Lite splash holds
 
   const card = document.getElementById("card");
   const statusEl = document.getElementById("cardStatus");
@@ -17,12 +18,15 @@
   const helperEl = document.getElementById("helper");
   const resendEl = document.getElementById("resend");
   const resendCountEl = document.getElementById("resendCount");
+  const continueBtn = document.getElementById("continueBtn");
+  const splashEl = document.getElementById("splash");
 
   const slots = [];
-  let state = "input"; // input | orbit | success
+  let state = "input"; // input | orbit | success | splash
   let resendTimer = null;
-  let successTimer = null;      // timer that moves to success
-  let orbitAnims = [];          // every running orbit animation
+  let successTimer = null;
+  let splashTimer = null;
+  let orbitAnims = [];
 
   const log = (m) => { statusEl.textContent = m; };
 
@@ -83,17 +87,17 @@
     successEl.classList.toggle("hidden", view !== "success");
     helperEl.classList.toggle("hidden", view !== "input");
     resendEl.classList.toggle("hidden", view !== "orbit");
-    messageEl.classList.toggle("hidden", view === "success");
+    messageEl.classList.toggle("hidden", view !== "input");
   }
 
   /* ---------- clear any running animation state ---------- */
   function stopAnimations() {
     if (successTimer) clearTimeout(successTimer);
+    if (splashTimer) clearTimeout(splashTimer);
     successTimer = null;
+    splashTimer = null;
     orbitAnims.forEach((a) => a.cancel());
     orbitAnims = [];
-    orbitSlots.style.transform = "";
-    orbitSlots.querySelectorAll("*").forEach((el) => { el.style.transform = ""; });
   }
 
   /* ---------- input handling ---------- */
@@ -101,71 +105,77 @@
     if (code === CODE) {
       verify();
     } else {
-      // wrong code: shake/red the slots briefly, then clear
       state = "input";
-      log("Incorrect code — try again");
+      log("Verify your number");
       hintEl.style.visibility = "";
       slots.forEach((s) => s.classList.add("error"));
       setTimeout(() => {
         slots.forEach((s) => s.classList.remove("error"));
-        log("Verify your number");
         resetSlots();
         slots[0].querySelector("input").focus();
       }, 900);
     }
   }
 
-  /* ---------- verify / orbit animation ---------- */
+  /* ---------- orbit / verifying ---------- */
   function verify() {
     state = "orbit";
     show("orbit");
-    log("Verifying…");
+    // reference keeps "Verify your number" up during the spin
+    log("Verify your number");
     hintEl.style.visibility = "hidden";
-    hideMessage();
     startResend(25);
 
+    // tiles rest at top/right/bottom/left, clockwise — 7,9,1,4
+    // (clockwise order from top; base angle = rotate() deg at tile centre/hub)
+    const placements = [
+      { d: "7", base: 270 },
+      { d: "9", base: 0 },
+      { d: "1", base: 90 },
+      { d: "4", base: 180 },
+    ];
+
     orbitSlots.innerHTML = "";
-    const items = CODE.split("").map((d) => {
+    const items = placements.map(({ d, base }) => {
       const el = document.createElement("span");
       el.className = "orbit__slot";
       const face = document.createElement("span");
       face.className = "orbit__face";
       face.textContent = d;
       el.appendChild(face);
+      el.dataset.base = base;
       orbitSlots.appendChild(el);
       return el;
     });
 
-    // Exact technique from the reference: origin on the hub, then
-    // `rotate(base) translate(r,0)` — each tile orbits the hub while its
-    // face counter-rotates so the digits stay upright and readable.
-    const r = ORBIT_RADIUS;
-    const ORBIT_MS = 1760; // one full revolution over 2 keyframe beats
-    items.forEach((el, i) => {
-      const base = i * 90; // right, bottom, left, top
-      el.style.transformOrigin = "center";
+    // the recording's technique: origin on the hub, then
+    // `rotate(base) translate(r,0)`; the face counter-rotates so each
+    // digit stays readable while the tiles orbit and tilt.
+    items.forEach((el) => {
+      const base = Number(el.dataset.base);
       const face = el.querySelector(".orbit__face");
 
       const orbit = el.animate(
         [
-          { transform: `rotate(${base}deg) translate(${r}px, 0px)` },
-          { transform: `rotate(${base + 360}deg) translate(${r}px, 0px)` },
+          { transform: `rotate(${base}deg) translate(${ORBIT_RADIUS}px, 0px)` },
+          { transform: `rotate(${base + 360}deg) translate(${ORBIT_RADIUS}px, 0px)` },
         ],
-        { duration: ORBIT_MS, easing: "cubic-bezier(.17,.8,.3,1)", fill: "forwards" }
+        { duration: ORBIT_MS, easing: "cubic-bezier(.2,.75,.3,1)", fill: "forwards" }
       );
       const stand = face.animate(
         [
           { transform: `rotate(${-base}deg)` },
           { transform: `rotate(${-base - 360}deg)` },
         ],
-        { duration: ORBIT_MS, easing: "cubic-bezier(.17,.8,.3,1)", fill: "forwards" }
+        { duration: ORBIT_MS, easing: "cubic-bezier(.2,.75,.3,1)", fill: "forwards" }
       );
       orbitAnims.push(orbit, stand);
     });
 
-    successTimer = setTimeout(() => succeed(), VERIFY_HOLD);
+    successTimer = setTimeout(() => succeed(), ORBIT_MS + 200);
   }
 
+  /* ---------- success + splash ---------- */
   function succeed() {
     stopAnimations();
     state = "success";
@@ -173,6 +183,15 @@
     log("Verified successfully");
     hintEl.style.visibility = "";
     stopResend();
+
+    // reference: after the success screen rests, the app shows the splash
+    splashTimer = setTimeout(showSplash, 2400);
+  }
+
+  function showSplash() {
+    state = "splash";
+    splashEl.classList.remove("hidden");
+    splashTimer = setTimeout(restart, SPLASH_MS);
   }
 
   /* ---------- resend countdown ---------- */
@@ -190,33 +209,25 @@
     resendTimer = null;
   }
 
-  /* ---------- message bubble ---------- */
-  function showMessage() {
-    messageEl.classList.remove("hidden");
-  }
-  function hideMessage() {
-    messageEl.classList.add("hidden");
-  }
-  fillBtn.addEventListener("click", () => {
-    setSlotValue(CODE);
-    handleCode(CODE);
-  });
-
   /* ---------- restart ---------- */
   function restart() {
     stopAnimations();
     state = "input";
+    splashEl.classList.add("hidden");
     resetSlots();
-    showMessage();
     show("input");
     log("Verify your number");
     hintEl.style.visibility = "";
     stopResend();
     slots[0].querySelector("input").focus();
   }
-  successEl.addEventListener("click", restart);
+
+  fillBtn.addEventListener("click", () => {
+    setSlotValue(CODE);
+    handleCode(CODE);
+  });
+  continueBtn.addEventListener("click", showSplash);
 
   buildSlots();
-  showMessage();
   show("input");
 })();

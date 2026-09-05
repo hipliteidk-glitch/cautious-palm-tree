@@ -221,13 +221,18 @@ html, body {
 }
 
 /* ---------- success ---------- */
-.success { margin-top: 34px; }
+.success { margin-top: 30px; }
 .success-title {
   color: var(--ok);
   font-size: 24px;
   font-weight: 600;
-  margin: 0 0 26px;
+  margin: 0 0 8px;
   text-shadow: 0 0 16px rgba(46, 230, 168, .4);
+}
+.success-sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 30px;
 }
 .success-badge {
   position: relative;
@@ -238,17 +243,12 @@ html, body {
   border-radius: 24px;
   display: grid;
   place-items: center;
+  color: var(--ok);
   box-shadow: 0 0 24px rgba(46,230,168,.35), inset 0 0 24px rgba(46,230,168,.15);
   animation: pop .5s cubic-bezier(.2,.9,.3,1.2);
 }
-.success-inner {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  background: linear-gradient(160deg, #123427, #0a1f18);
-  border: 1px solid #1f4f3c;
-}
-@keyframes pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.checkmark { width: 54px; height: 54px; filter: drop-shadow(0 0 8px rgba(46,230,168,.7)); }
+@keyframes pop { from { transform: scale(.25); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .spark {
   position: absolute;
   width: 6px;
@@ -262,14 +262,83 @@ html, body {
 .spark4 { top: 50%; right: -16px; }
 .spark5 { top: 4px; right: 4px; }
 .spark6 { bottom: 4px; left: 4px; }
-.spark7 { bottom: 4px; right: 4px; display: none; }
+.spark7 { bottom: 4px; right: 4px; }
+.spark8 { top: 4px; left: 4px; }
 .spark { animation: pulse 1.4s ease-in-out infinite; }
 .spark2 { animation-delay: .18s; }
 .spark3 { animation-delay: .36s; }
 .spark4 { animation-delay: .54s; }
 .spark5 { animation-delay: .72s; }
 .spark6 { animation-delay: .9s; }
+.spark7 { animation-delay: 1.08s; }
+.spark8 { animation-delay: 1.26s; }
 @keyframes pulse { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+
+.success-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 34px;
+  padding: 10px 6px 0 12px;
+  border-top: 1px solid var(--line);
+}
+.secure {
+  color: var(--muted);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.secure::before { content: ""; width: 18px; height: 18px; border-radius: 50%; background: rgba(46,230,168,.15); position: relative; }
+.continue-btn {
+  border: 1px solid var(--ok);
+  background: linear-gradient(180deg, #2ee6a8, #20c98f);
+  color: #04120c;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 9px 26px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(46,230,168,.35);
+  transition: transform .1s, box-shadow .15s;
+}
+.continue-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(46,230,168,.45); }
+.continue-btn:active { transform: translateY(1px); }
+
+/* ---------- splash ---------- */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #0a0b0d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.splash-logo { position: relative; margin-bottom: 10px; }
+.splash-logo .note {
+  font-size: 92px;
+  line-height: 1;
+  color: #fff;
+  filter: drop-shadow(-4px 0 0 rgba(12,234,255,.9)) drop-shadow(4px 0 0 rgba(255,77,109,.9));
+}
+.splash-logo .bolt {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 26px;
+}
+.splash-name {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -.5px;
+  text-shadow: -3px 0 0 rgba(12,234,255,.85), 3px 0 0 rgba(255,77,109,.85);
+}
+.splash-lite { margin: 0; color: #cfd4dc; font-size: 22px; letter-spacing: 1px; }
 
 /* ---------- resend / helper ---------- */
 .resend { color: var(--muted); margin-top: 26px; font-size: 14px; }
@@ -281,19 +350,24 @@ html, body {
 .message {
   display: flex;
   justify-content: center;
-  margin-top: 26px;
+  margin-top: 30px;
 }
 .hidden { display: none !important; }
 .message-pill {
   display: inline-flex;
   align-items: center;
+  width: 100%;
+  max-width: 360px;
   gap: 14px;
+  justify-content: flex-start;
   background: #0d1118;
   border: 1px solid #222a35;
   border-radius: 16px;
   padding: 12px 12px 12px 16px;
   box-shadow: 0 12px 28px rgba(0,0,0,.4);
 }
+.message-label { margin-right: auto; }
+.fill-btn { margin-left: auto; }
 .message-label {
   color: var(--muted);
   font-size: 12px;
@@ -411,8 +485,11 @@ html, body {
       <!-- success state -->
       <div class="success hidden" id="success" aria-hidden="true">
         <p class="success-title">Verified successfully</p>
+        <p class="success-sub">Your number has been verified.</p>
         <div class="success-badge">
-          <div class="success-inner"></div>
+          <svg class="checkmark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12.5 L10 17.5 L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
           <span class="spark spark1"></span>
           <span class="spark spark2"></span>
           <span class="spark spark3"></span>
@@ -420,22 +497,38 @@ html, body {
           <span class="spark spark5"></span>
           <span class="spark spark6"></span>
           <span class="spark spark7"></span>
+          <span class="spark spark8"></span>
+        </div>
+        <div class="success-footer">
+          <span class="secure">Verified and secure</span>
+          <button class="continue-btn" id="continueBtn" type="button">Continue</button>
         </div>
       </div>
 
       <p class="resend hidden" id="resend">Didn't receive the code? &nbsp;Resend in <span id="resendCount">25</span>s</p>
-      <p class="helper hidden" id="helper">Type it, paste it, or let the message fill it — <b>4719</b> is the good one.</p>
+
+      <!-- message bubble -->
+      <div class="message hidden" id="message">
+        <div class="message-pill">
+          <span class="message-label">MESSAGE.OTP</span>
+          <span class="message-body" id="messageBody"><b>4</b><b>7</b><b>1</b><b>9</b> is your verification code.</span>
+          <button class="fill-btn" id="fillBtn" type="button">Fill</button>
+        </div>
+      </div>
     </section>
 
-    <!-- message bubble -->
-    <div class="message hidden" id="message">
-      <div class="message-pill">
-        <span class="message-label">MESSAGE.OTP</span>
-        <span class="message-body" id="messageBody"><b>4</b><b>7</b><b>1</b><b>9</b> is your verification code.</span>
-        <button class="fill-btn" id="fillBtn" type="button">Fill</button>
-      </div>
-    </div>
+    <p class="helper hidden" id="helper">Type it, paste it, or let the message fill it — <b>4719</b> is the good one.</p>
   </main>
+
+  <!-- full-screen app splash (shown after verification, as in the recording) -->
+  <div class="splash hidden" id="splash" aria-hidden="true">
+    <div class="splash-logo">
+      <span class="note">&#9835;</span>
+      <span class="bolt">&#9889;</span>
+    </div>
+    <h2 class="splash-name">TikTok</h2>
+    <p class="splash-lite">Lite</p>
+  </div>
 
   <!-- recreated source panels -->
   <section class="codebar">
@@ -495,12 +588,13 @@ slot.animate([
 
   
 <script>
-/* OTP Verification V3 — reconstructed from the reference recording */
+/* OTP Verification V3 — matched to the reference recording */
 (() => {
   const CODE = "4719";
   const N = CODE.length;
-  const ORBIT_RADIUS = 78;   // px around the hub
-  const VERIFY_HOLD = 2400;  // ms of spin before success
+  const ORBIT_RADIUS = 78;   // px from hub to tile centre
+  const ORBIT_MS = 1760;     // one full revolution (2 x 880ms beats)
+  const SPLASH_MS = 1800;    // how long the TikTok Lite splash holds
 
   const card = document.getElementById("card");
   const statusEl = document.getElementById("cardStatus");
@@ -514,12 +608,15 @@ slot.animate([
   const helperEl = document.getElementById("helper");
   const resendEl = document.getElementById("resend");
   const resendCountEl = document.getElementById("resendCount");
+  const continueBtn = document.getElementById("continueBtn");
+  const splashEl = document.getElementById("splash");
 
   const slots = [];
-  let state = "input"; // input | orbit | success
+  let state = "input"; // input | orbit | success | splash
   let resendTimer = null;
-  let successTimer = null;      // timer that moves to success
-  let orbitAnims = [];          // every running orbit animation
+  let successTimer = null;
+  let splashTimer = null;
+  let orbitAnims = [];
 
   const log = (m) => { statusEl.textContent = m; };
 
@@ -580,17 +677,17 @@ slot.animate([
     successEl.classList.toggle("hidden", view !== "success");
     helperEl.classList.toggle("hidden", view !== "input");
     resendEl.classList.toggle("hidden", view !== "orbit");
-    messageEl.classList.toggle("hidden", view === "success");
+    messageEl.classList.toggle("hidden", view !== "input");
   }
 
   /* ---------- clear any running animation state ---------- */
   function stopAnimations() {
     if (successTimer) clearTimeout(successTimer);
+    if (splashTimer) clearTimeout(splashTimer);
     successTimer = null;
+    splashTimer = null;
     orbitAnims.forEach((a) => a.cancel());
     orbitAnims = [];
-    orbitSlots.style.transform = "";
-    orbitSlots.querySelectorAll("*").forEach((el) => { el.style.transform = ""; });
   }
 
   /* ---------- input handling ---------- */
@@ -598,71 +695,77 @@ slot.animate([
     if (code === CODE) {
       verify();
     } else {
-      // wrong code: shake/red the slots briefly, then clear
       state = "input";
-      log("Incorrect code — try again");
+      log("Verify your number");
       hintEl.style.visibility = "";
       slots.forEach((s) => s.classList.add("error"));
       setTimeout(() => {
         slots.forEach((s) => s.classList.remove("error"));
-        log("Verify your number");
         resetSlots();
         slots[0].querySelector("input").focus();
       }, 900);
     }
   }
 
-  /* ---------- verify / orbit animation ---------- */
+  /* ---------- orbit / verifying ---------- */
   function verify() {
     state = "orbit";
     show("orbit");
-    log("Verifying…");
+    // reference keeps "Verify your number" up during the spin
+    log("Verify your number");
     hintEl.style.visibility = "hidden";
-    hideMessage();
     startResend(25);
 
+    // tiles rest at top/right/bottom/left, clockwise — 7,9,1,4
+    // (clockwise order from top; base angle = rotate() deg at tile centre/hub)
+    const placements = [
+      { d: "7", base: 270 },
+      { d: "9", base: 0 },
+      { d: "1", base: 90 },
+      { d: "4", base: 180 },
+    ];
+
     orbitSlots.innerHTML = "";
-    const items = CODE.split("").map((d) => {
+    const items = placements.map(({ d, base }) => {
       const el = document.createElement("span");
       el.className = "orbit__slot";
       const face = document.createElement("span");
       face.className = "orbit__face";
       face.textContent = d;
       el.appendChild(face);
+      el.dataset.base = base;
       orbitSlots.appendChild(el);
       return el;
     });
 
-    // Exact technique from the reference: origin on the hub, then
-    // `rotate(base) translate(r,0)` — each tile orbits the hub while its
-    // face counter-rotates so the digits stay upright and readable.
-    const r = ORBIT_RADIUS;
-    const ORBIT_MS = 1760; // one full revolution over 2 keyframe beats
-    items.forEach((el, i) => {
-      const base = i * 90; // right, bottom, left, top
-      el.style.transformOrigin = "center";
+    // the recording's technique: origin on the hub, then
+    // `rotate(base) translate(r,0)`; the face counter-rotates so each
+    // digit stays readable while the tiles orbit and tilt.
+    items.forEach((el) => {
+      const base = Number(el.dataset.base);
       const face = el.querySelector(".orbit__face");
 
       const orbit = el.animate(
         [
-          { transform: `rotate(${base}deg) translate(${r}px, 0px)` },
-          { transform: `rotate(${base + 360}deg) translate(${r}px, 0px)` },
+          { transform: `rotate(${base}deg) translate(${ORBIT_RADIUS}px, 0px)` },
+          { transform: `rotate(${base + 360}deg) translate(${ORBIT_RADIUS}px, 0px)` },
         ],
-        { duration: ORBIT_MS, easing: "cubic-bezier(.17,.8,.3,1)", fill: "forwards" }
+        { duration: ORBIT_MS, easing: "cubic-bezier(.2,.75,.3,1)", fill: "forwards" }
       );
       const stand = face.animate(
         [
           { transform: `rotate(${-base}deg)` },
           { transform: `rotate(${-base - 360}deg)` },
         ],
-        { duration: ORBIT_MS, easing: "cubic-bezier(.17,.8,.3,1)", fill: "forwards" }
+        { duration: ORBIT_MS, easing: "cubic-bezier(.2,.75,.3,1)", fill: "forwards" }
       );
       orbitAnims.push(orbit, stand);
     });
 
-    successTimer = setTimeout(() => succeed(), VERIFY_HOLD);
+    successTimer = setTimeout(() => succeed(), ORBIT_MS + 200);
   }
 
+  /* ---------- success + splash ---------- */
   function succeed() {
     stopAnimations();
     state = "success";
@@ -670,6 +773,15 @@ slot.animate([
     log("Verified successfully");
     hintEl.style.visibility = "";
     stopResend();
+
+    // reference: after the success screen rests, the app shows the splash
+    splashTimer = setTimeout(showSplash, 2400);
+  }
+
+  function showSplash() {
+    state = "splash";
+    splashEl.classList.remove("hidden");
+    splashTimer = setTimeout(restart, SPLASH_MS);
   }
 
   /* ---------- resend countdown ---------- */
@@ -687,34 +799,26 @@ slot.animate([
     resendTimer = null;
   }
 
-  /* ---------- message bubble ---------- */
-  function showMessage() {
-    messageEl.classList.remove("hidden");
-  }
-  function hideMessage() {
-    messageEl.classList.add("hidden");
-  }
-  fillBtn.addEventListener("click", () => {
-    setSlotValue(CODE);
-    handleCode(CODE);
-  });
-
   /* ---------- restart ---------- */
   function restart() {
     stopAnimations();
     state = "input";
+    splashEl.classList.add("hidden");
     resetSlots();
-    showMessage();
     show("input");
     log("Verify your number");
     hintEl.style.visibility = "";
     stopResend();
     slots[0].querySelector("input").focus();
   }
-  successEl.addEventListener("click", restart);
+
+  fillBtn.addEventListener("click", () => {
+    setSlotValue(CODE);
+    handleCode(CODE);
+  });
+  continueBtn.addEventListener("click", showSplash);
 
   buildSlots();
-  showMessage();
   show("input");
 })();
 
