@@ -2,6 +2,9 @@
 (() => {
   const CODE = "4719";
   const N = CODE.length;
+  const ORBIT_RADIUS = 78;   // px around the hub
+  const ORBIT_HOLD = 900;    // ms to converge onto the ring
+  const VERIFY_HOLD = 2400;  // ms of spin before success
 
   const card = document.getElementById("card");
   const statusEl = document.getElementById("cardStatus");
@@ -19,6 +22,9 @@
   const slots = [];
   let state = "input"; // input | orbit | success
   let resendTimer = null;
+  let orbitKickoff = null; // timer for the converge->spin transition
+  let successTimer = null; // timer that moves to success
+  let spinAnim = null;     // the live orbit rotation animation
 
   const log = (m) => { statusEl.textContent = m; };
 
@@ -41,7 +47,7 @@
         slot.classList.toggle("filled", !!input.value);
         slot.classList.remove("error");
         if (input.value && i < N - 1) slots[i + 1].querySelector("input").focus();
-        if (getCode().length === N) verify(getCode());
+        if (getCode().length === N) handleCode(getCode());
       });
       input.addEventListener("keydown", (e) => {
         if (e.key === "Backspace" && !input.value && i > 0) {
@@ -72,28 +78,59 @@
   };
   const resetSlots = () => setSlotValue("");
 
-  /* ---------- set the active state ---------- */
-  function show(state) {
-    codeEl.classList.toggle("hidden", state !== "input");
-    orbitEl.classList.toggle("hidden", state !== "orbit");
-    successEl.classList.toggle("hidden", state !== "success");
-    helperEl.classList.toggle("hidden", state !== "input");
-    resendEl.classList.toggle("hidden", state !== "orbit");
-    messageEl.classList.toggle("hidden", state === "success");
+  /* ---------- set the active view ---------- */
+  function show(view) {
+    codeEl.classList.toggle("hidden", view !== "input");
+    orbitEl.classList.toggle("hidden", view !== "orbit");
+    successEl.classList.toggle("hidden", view !== "success");
+    helperEl.classList.toggle("hidden", view !== "input");
+    resendEl.classList.toggle("hidden", view !== "orbit");
+    messageEl.classList.toggle("hidden", view === "success");
+  }
+
+  /* ---------- clear any running animation state ---------- */
+  function stopAnimations() {
+    if (orbitKickoff) clearTimeout(orbitKickoff);
+    if (successTimer) clearTimeout(successTimer);
+    orbitKickoff = null;
+    successTimer = null;
+    if (spinAnim) { spinAnim.cancel(); spinAnim = null; }
+    orbitSlots.style.transform = "";
+    orbitSlots.getAnimations().forEach((a) => a.cancel());
+    orbitEl.getAnimations().forEach((a) => a.cancel());
+  }
+
+  /* ---------- input handling ---------- */
+  function handleCode(code) {
+    if (code === CODE) {
+      verify();
+    } else {
+      // wrong code: shake/red the slots briefly, then clear
+      state = "input";
+      log("Incorrect code — try again");
+      hintEl.style.visibility = "";
+      slots.forEach((s) => s.classList.add("error"));
+      setTimeout(() => {
+        slots.forEach((s) => s.classList.remove("error"));
+        log("Verify your number");
+        resetSlots();
+        slots[0].querySelector("input").focus();
+      }, 900);
+    }
   }
 
   /* ---------- verify / orbit animation ---------- */
-  function verify(code) {
+  function verify() {
     state = "orbit";
-    hideMessage();
     show("orbit");
     log("Verifying…");
     hintEl.style.visibility = "hidden";
+    hideMessage();
     startResend(25);
 
-    const digits = code.split("");
     orbitSlots.innerHTML = "";
-    const slotsEl = digits.map((d) => {
+    const digits = CODE.split("");
+    const items = digits.map((d) => {
       const el = document.createElement("span");
       el.className = "orbit__slot";
       el.textContent = d;
@@ -101,72 +138,48 @@
       return el;
     });
 
-    const centre = 125;
-    const radius = 78;
-    const angle = 90;
-    const rad = (angle * Math.PI) / 180;
-    const dx = Math.cos(rad) * radius;
-    const dy = Math.sin(rad) * radius;
-
-    // digits converge to orbit, then spin together
-    const WIND_UP_BRAKE = [0.12, 0.52, 0.82, 1];
-    slotsEl.forEach((el, i) => {
-      const a0 = ((angle + i * 90) * Math.PI) / 180;
-      const x0 = Math.cos(a0) * radius;
-      const y0 = Math.sin(a0) * radius;
-      el.style.transformOrigin = `${centre}px ${centre}px`;
-      el.animate(
+    // 1) digits converge from the centre to four fixed points on the ring.
+    // Each slot keeps its own (x0, y0), so the four stay 90° apart.
+    items.forEach((el, i) => {
+      const a = ((90 + i * 90) * Math.PI) / 180; // top, right, bottom, left
+      const x0 = Math.cos(a) * ORBIT_RADIUS;
+      const y0 = Math.sin(a) * ORBIT_RADIUS;
+      const converge = el.animate(
         [
-          { transform: `translate(0,0) scale(1)` },
-          {
-            transform: `translate(${x0}px,${y0}px) scale(1)`,
-            offset: 0.55,
-          },
+          { transform: "translate(0px,0px)" },
+          { transform: `translate(${x0}px,${y0}px)` },
         ],
-        { duration: 880, easing: "cubic-bezier(.2,.7,.3,1)" }
+        { duration: 880, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" }
       );
+      converge.onfinish = () => {
+        // lock the resting transform so the parent can rotate cleanly
+        el.style.transform = `translate(${x0}px,${y0}px)`;
+      };
     });
 
-    setTimeout(() => {
-      // spin the whole set, as in the reference
-      const arm = (el, base) =>
-        el.animate(
-          [
-            { transform: `translate(${dx}px,${dy}px) rotate(0deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(45deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(90deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(135deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(180deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(225deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(270deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(315deg)` },
-            { transform: `translate(${dx}px,${dy}px) rotate(360deg)` },
-          ],
-          { duration: 880, iterations: 1, easing: "cubic-bezier(.1,.6,.2,1)" }
-        );
-      // offset each so they take the four positions
-      slotsEl.forEach((el, i) => (el.dataset.base = i));
-      spinCycle(slotsEl, dx, dy, 0);
-      setTimeout(() => succeed(), 2400);
-    }, 900);
-  }
-
-  function spinCycle(list, dx, dy, round) {
-    list.forEach((el, i) => {
-      // four arms kept 90° apart
-      const start = (i * 90 + round * 90) % 360;
-      el.animate(
+    // 2) rotate the whole track (spacing preserved), then succeed
+    orbitKickoff = setTimeout(() => {
+      spinAnim = orbitSlots.animate(
         [
-          { transform: `translate(${dx}px,${dy}px) rotate(${start}deg)` },
-          { transform: `translate(${dx}px,${dy}px) rotate(${start + 90}deg)` },
+          { transform: "rotate(0deg)" },
+          { transform: "rotate(90deg)" },
+          { transform: "rotate(180deg)" },
+          { transform: "rotate(270deg)" },
+          { transform: "rotate(360deg)" },
         ],
-        { duration: 880, easing: "cubic-bezier(.2,.7,.3,1)" }
+        {
+          duration: 880,
+          iterations: 2,
+          easing: "cubic-bezier(.1,.6,.2,1)",
+          fill: "forwards",
+        }
       );
-    });
-    setTimeout(() => spinCycle(list, dx, dy, round + 1), 880);
+      successTimer = setTimeout(() => succeed(), VERIFY_HOLD);
+    }, ORBIT_HOLD);
   }
 
   function succeed() {
+    stopAnimations();
     state = "success";
     show("success");
     log("Verified successfully");
@@ -198,11 +211,12 @@
   }
   fillBtn.addEventListener("click", () => {
     setSlotValue(CODE);
-    verify(CODE);
+    handleCode(CODE);
   });
 
   /* ---------- restart ---------- */
   function restart() {
+    stopAnimations();
     state = "input";
     resetSlots();
     showMessage();
