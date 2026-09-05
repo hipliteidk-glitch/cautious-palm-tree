@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OTP Verification V3 — HTML CSS JS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- demo header -->
+  <header class="demo-header">
+    <div class="brand">
+      <span class="brand-mark">&#9835;</span>
+      <div class="brand-name">
+        <strong>TikTok Lite</strong>
+        <small>@ settiigation</small>
+      </div>
+    </div>
+    <div class="demo-title">
+      <span>OTP Verification V3</span>
+      <span class="stack">— HTML CSS JS</span>
+    </div>
+    <div class="host">localhost / gyre</div>
+  </header>
+
+  <main class="stage">
+    <p class="kicker">COMPONENT · 89</p>
+    <h1 class="page-title">OTP Verification <span>v3</span></h1>
+
+    <!-- OTP card -->
+    <section class="card" id="card" aria-label="OTP verification">
+      <span class="grabber"></span>
+
+      <div class="card-status" id="cardStatus">Verify your number</div>
+      <p class="card-hint" id="cardHint">Enter the 4-digit code we sent to +1415 &#8226;&#8226;&#8226; 0142</p>
+
+      <!-- input state -->
+      <div class="code" id="code" aria-live="polite"></div>
+
+      <!-- orbit / verifying state -->
+      <div class="orbit hidden" id="orbit" aria-hidden="true">
+        <svg class="orbit__ring" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="80" fill="none" />
+        </svg>
+        <span class="orbit__hub"></span>
+        <div class="orbit__slots" id="orbitSlots">
+          <span class="orbit__slot"></span>
+          <span class="orbit__slot"></span>
+          <span class="orbit__slot"></span>
+          <span class="orbit__slot"></span>
+        </div>
+      </div>
+
+      <!-- success state -->
+      <div class="success hidden" id="success" aria-hidden="true">
+        <p class="success-title">Verified successfully</p>
+        <div class="success-badge">
+          <div class="success-inner"></div>
+          <span class="spark spark1"></span>
+          <span class="spark spark2"></span>
+          <span class="spark spark3"></span>
+          <span class="spark spark4"></span>
+          <span class="spark spark5"></span>
+          <span class="spark spark6"></span>
+          <span class="spark spark7"></span>
+        </div>
+      </div>
+
+      <p class="resend hidden" id="resend">Didn't receive the code? &nbsp;Resend in <span id="resendCount">25</span>s</p>
+      <p class="helper hidden" id="helper">Type it, paste it, or let the message fill it — <b>4719</b> is the good one.</p>
+    </section>
+
+    <!-- message bubble -->
+    <div class="message hidden" id="message">
+      <div class="message-pill">
+        <span class="message-label">MESSAGE.OTP</span>
+        <span class="message-body" id="messageBody"><b>4</b><b>7</b><b>1</b><b>9</b> is your verification code.</span>
+        <button class="fill-btn" id="fillBtn" type="button">Fill</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- recreated source panels -->
+  <section class="codebar">
+    <div class="file" data-tab="html">
+      <span class="dot"></span>
+      <h3>index.html</h3>
+      <pre><code>&lt;!-- the track, and the point
+     the four collapse onto --&gt;
+&lt;div class="orbit"&gt;
+  &lt;svg class="orbit__ring"&gt;
+    &lt;circle r="80" vector-effect="non-scaling-stroke"/&gt;
+  &lt;/svg&gt;
+  &lt;span class="orbit__hub"&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;label class="slot"&gt;
+  &lt;input inputmode="numeric" autocomplete="one-time-code"&gt;
+&lt;/label&gt;</code></pre>
+    </div>
+    <div class="file" data-tab="css">
+      <span class="dot"></span>
+      <h3>style.css</h3>
+      <pre><code>/* dotted on purpose: a solid ring
+   at this size reads as a leading
+   spinner */
+.orbit__path {
+  stroke-dasharray: 2 8;
+  stroke-width: 1.5;
+}
+
+/* colour is reserved for
+   verdicts — attention here
+   is not a hue, it is light */
+--ice: #0ceaff;
+--ok:  #2ee6a8;
+--bad: #ff4d6d;</code></pre>
+    </div>
+    <div class="file" data-tab="js">
+      <span class="dot"></span>
+      <h3>app.js</h3>
+      <pre><code>// never SIMPLE a turn — move
+// the origin to the hub and
+// plain rotate() draws an
+// exact circle, 2 keyframes
+slot.style.transformOrigin =
+  `${hubX}px ${hubY}px`;
+
+slot.animate([
+  { transform: `rotate(0deg)
+      translate(${dx}px,${dy}px)` },
+  { transform: `rotate(45deg)
+      translate(${dx}px,${dy}px)` },
+], { duration: 880,
+     easing: WIND_UP_BRAKE });</code></pre>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
