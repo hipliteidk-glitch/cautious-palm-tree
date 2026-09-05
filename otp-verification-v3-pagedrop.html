@@ -203,13 +203,20 @@ html, body {
   left: 50%;
   width: 56px;
   height: 56px;
+  margin: -28px 0 0 -28px; /* centre the tile on the hub */
   border-radius: 14px;
   background: #101722;
   border: 1px solid #242c38;
-  display: grid;
-  place-items: center;
   font-size: 26px;
   font-weight: 600;
+  will-change: transform;
+}
+.orbit__face {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--text);
   will-change: transform;
 }
 
@@ -493,7 +500,6 @@ slot.animate([
   const CODE = "4719";
   const N = CODE.length;
   const ORBIT_RADIUS = 78;   // px around the hub
-  const ORBIT_HOLD = 900;    // ms to converge onto the ring
   const VERIFY_HOLD = 2400;  // ms of spin before success
 
   const card = document.getElementById("card");
@@ -512,9 +518,8 @@ slot.animate([
   const slots = [];
   let state = "input"; // input | orbit | success
   let resendTimer = null;
-  let orbitKickoff = null; // timer for the converge->spin transition
-  let successTimer = null; // timer that moves to success
-  let spinAnim = null;     // the live orbit rotation animation
+  let successTimer = null;      // timer that moves to success
+  let orbitAnims = [];          // every running orbit animation
 
   const log = (m) => { statusEl.textContent = m; };
 
@@ -580,14 +585,12 @@ slot.animate([
 
   /* ---------- clear any running animation state ---------- */
   function stopAnimations() {
-    if (orbitKickoff) clearTimeout(orbitKickoff);
     if (successTimer) clearTimeout(successTimer);
-    orbitKickoff = null;
     successTimer = null;
-    if (spinAnim) { spinAnim.cancel(); spinAnim = null; }
+    orbitAnims.forEach((a) => a.cancel());
+    orbitAnims = [];
     orbitSlots.style.transform = "";
-    orbitSlots.getAnimations().forEach((a) => a.cancel());
-    orbitEl.getAnimations().forEach((a) => a.cancel());
+    orbitSlots.querySelectorAll("*").forEach((el) => { el.style.transform = ""; });
   }
 
   /* ---------- input handling ---------- */
@@ -619,53 +622,45 @@ slot.animate([
     startResend(25);
 
     orbitSlots.innerHTML = "";
-    const digits = CODE.split("");
-    const items = digits.map((d) => {
+    const items = CODE.split("").map((d) => {
       const el = document.createElement("span");
       el.className = "orbit__slot";
-      el.textContent = d;
+      const face = document.createElement("span");
+      face.className = "orbit__face";
+      face.textContent = d;
+      el.appendChild(face);
       orbitSlots.appendChild(el);
       return el;
     });
 
-    // 1) digits converge from the centre to four fixed points on the ring.
-    // Each slot keeps its own (x0, y0), so the four stay 90° apart.
+    // Exact technique from the reference: origin on the hub, then
+    // `rotate(base) translate(r,0)` — each tile orbits the hub while its
+    // face counter-rotates so the digits stay upright and readable.
+    const r = ORBIT_RADIUS;
+    const ORBIT_MS = 1760; // one full revolution over 2 keyframe beats
     items.forEach((el, i) => {
-      const a = ((90 + i * 90) * Math.PI) / 180; // top, right, bottom, left
-      const x0 = Math.cos(a) * ORBIT_RADIUS;
-      const y0 = Math.sin(a) * ORBIT_RADIUS;
-      const converge = el.animate(
+      const base = i * 90; // right, bottom, left, top
+      el.style.transformOrigin = "center";
+      const face = el.querySelector(".orbit__face");
+
+      const orbit = el.animate(
         [
-          { transform: "translate(0px,0px)" },
-          { transform: `translate(${x0}px,${y0}px)` },
+          { transform: `rotate(${base}deg) translate(${r}px, 0px)` },
+          { transform: `rotate(${base + 360}deg) translate(${r}px, 0px)` },
         ],
-        { duration: 880, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" }
+        { duration: ORBIT_MS, easing: "cubic-bezier(.17,.8,.3,1)", fill: "forwards" }
       );
-      converge.onfinish = () => {
-        // lock the resting transform so the parent can rotate cleanly
-        el.style.transform = `translate(${x0}px,${y0}px)`;
-      };
+      const stand = face.animate(
+        [
+          { transform: `rotate(${-base}deg)` },
+          { transform: `rotate(${-base - 360}deg)` },
+        ],
+        { duration: ORBIT_MS, easing: "cubic-bezier(.17,.8,.3,1)", fill: "forwards" }
+      );
+      orbitAnims.push(orbit, stand);
     });
 
-    // 2) rotate the whole track (spacing preserved), then succeed
-    orbitKickoff = setTimeout(() => {
-      spinAnim = orbitSlots.animate(
-        [
-          { transform: "rotate(0deg)" },
-          { transform: "rotate(90deg)" },
-          { transform: "rotate(180deg)" },
-          { transform: "rotate(270deg)" },
-          { transform: "rotate(360deg)" },
-        ],
-        {
-          duration: 880,
-          iterations: 2,
-          easing: "cubic-bezier(.1,.6,.2,1)",
-          fill: "forwards",
-        }
-      );
-      successTimer = setTimeout(() => succeed(), VERIFY_HOLD);
-    }, ORBIT_HOLD);
+    successTimer = setTimeout(() => succeed(), VERIFY_HOLD);
   }
 
   function succeed() {

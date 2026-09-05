@@ -195,13 +195,20 @@ html, body {
   left: 50%;
   width: 56px;
   height: 56px;
+  margin: -28px 0 0 -28px; /* centre the tile on the hub */
   border-radius: 14px;
   background: #101722;
   border: 1px solid #242c38;
-  display: grid;
-  place-items: center;
   font-size: 26px;
   font-weight: 600;
+  will-change: transform;
+}
+.orbit__face {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--text);
   will-change: transform;
 }
 
